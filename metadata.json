@@ -1,0 +1,6 @@
+{
+  "name": "TOM BUD - Usługi ziemne",
+  "description": "Profesjonalna strona firmy TOM BUD oferującej usługi koparką 2,7 ton oraz kompleksowe prace ziemne.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
