@@ -29,23 +29,33 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
+  // Gallery state - limit initial rendered images to reduce network payload and rendering lag
+  const [visibleImagesCount, setVisibleImagesCount] = useState(10);
+  
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxTitle, setLightboxTitle] = useState("");
 
-  // Scroll listener to update header style
+  // Scroll listener to update header style with passive option to eliminate scroll stutter
   useEffect(() => {
+    let active = true;
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      if (!active) return;
+      const shouldScroll = window.scrollY > 50;
+      setScrolled((prev) => {
+        if (prev !== shouldScroll) {
+          return shouldScroll;
+        }
+        return prev;
+      });
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      active = false;
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   // Unified, flat list of all realization images
@@ -116,11 +126,12 @@ export default function App() {
           
           {/* Logo brand */}
           <a href="#hero" className="flex items-center gap-3 group">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#f5c400] transition-transform duration-300 group-hover:scale-105">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#f5c400] transition-transform duration-300 group-hover:scale-105 transform-gpu">
               <img 
                 src="https://i.ibb.co/6JscD8M8/469607065-122179070072152172-1636234746867101575-n.jpg" 
                 alt="TOM BUD Logo" 
                 className="object-cover w-full h-full"
+                loading="lazy"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -246,6 +257,8 @@ export default function App() {
             src="https://i.ibb.co/6JbtBnzX/474196238-122185470158152172-3829802752083062145-n.jpg" 
             alt="TOM BUD Koparka" 
             className="w-full h-full object-cover object-center"
+            loading="eager"
+            {...{ fetchPriority: "high" }}
             referrerPolicy="no-referrer"
           />
           {/* Linear gradient overlay for high contrast text readability */}
@@ -352,6 +365,7 @@ export default function App() {
                       src="https://i.ibb.co/6JscD8M8/469607065-122179070072152172-1636234746867101575-n.jpg" 
                       alt="TOM BUD Maszyny" 
                       className="w-full h-full object-cover"
+                      loading="lazy"
                       referrerPolicy="no-referrer"
                     />
                   </div>
@@ -566,11 +580,11 @@ export default function App() {
 
           {/* Project Images Responsive Thumbnails Gallery Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {allImages.map((imgUrl, imgIdx) => (
+            {allImages.slice(0, visibleImagesCount).map((imgUrl, imgIdx) => (
               <div 
                 key={imgIdx}
                 onClick={() => openLightbox(allImages, imgIdx, "Realizacja TOM BUD")}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-black border border-zinc-800 cursor-pointer shadow-md hover:shadow-2xl hover:border-[#f5c400]/50 transition-all duration-300"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-black border border-zinc-800 cursor-pointer shadow-md hover:shadow-2xl hover:border-[#f5c400]/50 transition-all duration-300 transform-gpu"
               >
                 {/* Loading visual */}
                 <div className="absolute inset-0 bg-zinc-950 flex items-center justify-center -z-10">
@@ -581,7 +595,7 @@ export default function App() {
                 <img 
                   src={imgUrl} 
                   alt={`Realizacja TOM BUD - Zdjęcie ${imgIdx + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108 transform-gpu"
                   loading="lazy"
                   referrerPolicy="no-referrer"
                 />
@@ -596,6 +610,19 @@ export default function App() {
               </div>
             ))}
           </div>
+
+          {/* Show more button if there are more images */}
+          {visibleImagesCount < allImages.length && (
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={() => setVisibleImagesCount(allImages.length)}
+                className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 text-gray-300 hover:text-white font-display font-bold py-3.5 px-8 rounded-xl hover:border-[#f5c400]/50 hover:bg-zinc-800/80 transition-all duration-300 hover:scale-102 cursor-pointer shadow-lg active:scale-98 transform-gpu"
+              >
+                <span>Pokaż więcej zdjęć ({allImages.length - visibleImagesCount})</span>
+                <ChevronRight size={16} className="text-[#f5c400] rotate-90" />
+              </button>
+            </div>
+          )}
 
         </div>
       </section>
